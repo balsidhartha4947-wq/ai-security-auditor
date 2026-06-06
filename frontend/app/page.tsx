@@ -13,8 +13,9 @@ export default function Home() {
   const [isScanning, setIsScanning] = useState(false)
 
   const connectWebSocket = (realTaskId: string) => {
-    // ✅ Use real task ID from backend — NOT hardcoded "/ws/scan"
-    const ws = new WebSocket(`ws://127.0.0.1:8000/ws/${realTaskId}`)
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+    const wsUrl = apiUrl.replace('https://', 'wss://').replace('http://', 'ws://')
+    const ws = new WebSocket(`${wsUrl}/ws/${realTaskId}`)
 
     ws.onopen = () => {
       console.log('WebSocket connected for task:', realTaskId)
@@ -69,10 +70,15 @@ export default function Home() {
     setConnectionStatus('Starting...')
 
     try {
-      // ✅ Step 1: POST to /scan to get real task_id
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
+      // Step 1: POST to /scan to get real task_id
       const response = await fetch(
-        `http://localhost:8000/scan?repo_url=${encodeURIComponent(repoUrl.trim())}`,
-        { method: 'POST' }
+        `${apiUrl}/scan?repo_url=${encodeURIComponent(repoUrl.trim())}`,
+        {
+          method: 'POST',
+          headers: { 'ngrok-skip-browser-warning': 'true' }
+        }
       )
 
       if (!response.ok) {
@@ -86,7 +92,7 @@ export default function Home() {
       const realTaskId: string = data.task_id
       setTaskId(realTaskId)
 
-      // ✅ Step 2: Open WebSocket with real task ID
+      // Step 2: Open WebSocket with real task ID
       connectWebSocket(realTaskId)
 
     } catch (err: any) {
