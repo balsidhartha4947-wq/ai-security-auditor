@@ -72,7 +72,6 @@ export default function Home() {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
-      // Step 1: POST to /scan to get real task_id
       const response = await fetch(
         `${apiUrl}/scan?repo_url=${encodeURIComponent(repoUrl.trim())}`,
         {
@@ -89,10 +88,24 @@ export default function Home() {
       const data = await response.json()
       console.log('Scan started:', data)
 
+      // Handle cached result
+      if (data.status === 'cached') {
+        setConnectionStatus('Completed (Cached)')
+        setLatestProgress(100)
+        setLatestStep('Cached result — no changes since last scan')
+        setResults({
+          results: [],
+          message: data.message,
+          total_findings: data.total_findings
+        })
+        setIsScanning(false)
+        return
+      }
+
       const realTaskId: string = data.task_id
       setTaskId(realTaskId)
 
-      // Step 2: Open WebSocket with real task ID
+      // Open WebSocket with real task ID
       connectWebSocket(realTaskId)
 
     } catch (err: any) {
@@ -102,7 +115,7 @@ export default function Home() {
     }
   }
 
-  const totalFindings = results?.results?.length ?? 0
+  const totalFindings = results?.results?.length ?? results?.total_findings ?? 0
 
   return (
     <main className="min-h-screen bg-gray-950 text-gray-100 p-10 font-mono">
@@ -132,7 +145,7 @@ export default function Home() {
       {/* Status */}
       <div className="mt-6 text-sm text-gray-400">
         Status: <span className={`font-bold ${
-          connectionStatus === 'Connected' || connectionStatus === 'Completed' ? 'text-green-400' :
+          connectionStatus === 'Connected' || connectionStatus === 'Completed' || connectionStatus === 'Completed (Cached)' ? 'text-green-400' :
           connectionStatus.startsWith('Error') || connectionStatus.startsWith('Failed') ? 'text-red-400' :
           'text-yellow-400'
         }`}>{connectionStatus}</span>
@@ -170,6 +183,9 @@ export default function Home() {
           <p className="text-sm text-gray-300 mb-3">
             Total findings: <strong className="text-white">{totalFindings}</strong>
           </p>
+          {results.message && (
+            <p className="text-xs text-yellow-400 mb-3">{results.message}</p>
+          )}
           {results.errors?.length > 0 && (
             <div className="mb-3 p-3 bg-red-950 border border-red-800 rounded text-xs text-red-300">
               <strong>Errors:</strong>
