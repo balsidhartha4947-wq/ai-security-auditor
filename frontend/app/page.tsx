@@ -21,30 +21,23 @@ const pollStatus = (realTaskId: string) => {
         const res = await fetch(`${apiUrl}/task-status/${realTaskId}`, {
           headers: { 'ngrok-skip-browser-warning': 'true' }
         })
-
         if (!res.ok) return
-
         const data = await res.json()
         console.log('Poll result:', data)
 
-        // Extract progress from details
-        const details = data.details ? JSON.parse(data.details) : {}
-        const progress = details.progress ?? 0
-        const step = details.step ?? data.status ?? ''
-
-        setLatestProgress(progress)
-        setLatestStep(step)
-        setMessages(prev => [...prev, { progress, step }])
+        setLatestProgress(data.progress ?? 0)
+        setLatestStep(data.step ?? '')
+        setMessages(prev => [...prev, data])
 
         if (data.status === 'SUCCESS') {
-          setResults(details.results ?? details)
+          setResults(data.results)
           setIsScanning(false)
           setConnectionStatus('Completed')
           clearInterval(interval)
         }
 
-        if (data.status === 'FAILURE') {
-          setConnectionStatus('Failed')
+        if (data.status === 'FAILURE' || data.status === 'ERROR') {
+          setConnectionStatus('Failed: ' + data.error)
           setIsScanning(false)
           clearInterval(interval)
         }
