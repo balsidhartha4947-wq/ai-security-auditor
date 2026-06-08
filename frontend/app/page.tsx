@@ -13,7 +13,7 @@ export default function Home() {
   const [isScanning, setIsScanning] = useState(false)
 
   const pollStatus = (realTaskId: string) => {
-    const apiUrl = const apiUrl = '/api'
+    const apiUrl = '/api'
     setConnectionStatus('Connected')
 
     const interval = setInterval(async () => {
@@ -71,7 +71,7 @@ export default function Home() {
     setConnectionStatus('Starting...')
 
     try {
-      const apiUrl = const apiUrl = '/api'
+      const apiUrl = '/api'
 
       const response = await fetch(
         `${apiUrl}/scan?repo_url=${encodeURIComponent(repoUrl.trim())}`,
