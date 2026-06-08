@@ -3,7 +3,7 @@
 import { useState } from 'react'
 
 export default function Home() {
-  const [repoUrl, setRepoUrl] = useState('https://github.com/juice-shop/juice-shop')
+  const [repoUrl, setRepoUrl] = useState('')
   const [taskId, setTaskId] = useState('')
   const [messages, setMessages] = useState<any[]>([])
   const [connectionStatus, setConnectionStatus] = useState('Disconnected')
