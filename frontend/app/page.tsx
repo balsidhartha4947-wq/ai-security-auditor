@@ -12,13 +12,13 @@ export default function Home() {
   const [results, setResults] = useState<any>(null)
   const [isScanning, setIsScanning] = useState(false)
 
-  const pollStatus = (realTaskId: string) => {
+const pollStatus = (realTaskId: string) => {
     const apiUrl = '/api'
     setConnectionStatus('Connected')
 
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`${apiUrl}/scan/${realTaskId}`, {
+        const res = await fetch(`${apiUrl}/task-status/${realTaskId}`, {
           headers: { 'ngrok-skip-browser-warning': 'true' }
         })
 
@@ -27,24 +27,23 @@ export default function Home() {
         const data = await res.json()
         console.log('Poll result:', data)
 
-        setLatestProgress(data.progress ?? 0)
-        setLatestStep(data.step ?? '')
-        setMessages(prev => [...prev, data])
+        // Extract progress from details
+        const details = data.details ? JSON.parse(data.details) : {}
+        const progress = details.progress ?? 0
+        const step = details.step ?? data.status ?? ''
 
-        if (data.progress === 100) {
-          setResults(data.results)
+        setLatestProgress(progress)
+        setLatestStep(step)
+        setMessages(prev => [...prev, { progress, step }])
+
+        if (data.status === 'SUCCESS') {
+          setResults(details.results ?? details)
           setIsScanning(false)
           setConnectionStatus('Completed')
           clearInterval(interval)
         }
 
-        if (data.error) {
-          setConnectionStatus('Error: ' + data.error)
-          setIsScanning(false)
-          clearInterval(interval)
-        }
-
-        if (data.status === 'failed') {
+        if (data.status === 'FAILURE') {
           setConnectionStatus('Failed')
           setIsScanning(false)
           clearInterval(interval)
@@ -55,6 +54,7 @@ export default function Home() {
       }
     }, 3000)
   }
+
 
   const startScan = async () => {
     if (!repoUrl.trim()) {
